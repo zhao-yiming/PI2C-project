@@ -19,6 +19,10 @@ def getColor(current):
     symbols = ['B', 'W']
     return symbols[current]
 
+def getEnnemy(current):
+    symbols = ['W', 'B']
+    return symbols[current]
+
 def checkMarble(board,pos):
     li,ci=pos[0],pos[1]
     direct=[[-1,0],[1,0],[-1,-1],[1,1],[0,1],[0,-1]]
@@ -75,6 +79,39 @@ def choixDirection(marble,board,listeDirections=['NE','SW','NW','SE','E','W']):
         return direction
     else:
         return choixDirection(marble,board,listeDirections[:val]+listeDirections[val+1:])
+
+def winner(board,current):
+    color=getColor(current)
+    ennemy=getEnnemy(current)
+    mesMarbles=0
+    ennemyMarbles=0
+    i=0
+    while i<9:
+        for state in range(len(board[i])):
+            if board[i][state]==color:
+                mesMarbles+=1
+            if board[i][state]==ennemy:
+                ennemyMarbles+=1
+        i+=1
+    if mesMarbles<=8:
+        return ennemy
+    if ennemyMarbles<=8:
+        return color
+    return None
+
+def utility(board,current):
+    theWinner=winner(board,current)
+    if theWinner is None:
+        return 0
+    if theWinner == getColor(current):
+        return 1
+    return -1
+
+def gameOver(board,current):
+    if winner(board,current) is not None:
+        return True
+    return False
+
 
 
 def listenServer():
