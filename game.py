@@ -60,9 +60,9 @@ def utility(board,current):
 
 def OnBoard(pos):
 	l,c=pos[0],pos[1]
-	if min(pos)<0:
+	if min(l,c)<0:
 		return False
-	if max(pos)>8:
+	if max(l,c)>8:
 		return False
 	if abs(c-l)>=5:
 		return False
@@ -86,13 +86,13 @@ def moves(board,color,ennemy):
 				if board[li+l][ci+c]=='E': #anvance 1 pion dans le vide
 					moveOne.append([(li,ci),direction])
 				if board[li+l][ci+c]==ennemy and OnBoard([li+l,ci+c])==True: 
-					if board[li+2*l][ci+2*c]=='E' or OnBoard([li+2*l,ci+2*c])==False:#pousse 2 contre 1
+					if (board[li+2*l][ci+2*c]=='E') or (OnBoard([li+2*l,ci+2*c])==False):#pousse 2 contre 1
 						if board[li-l][ci-c]==color and OnBoard([li-l,ci-c])==True:
 							moveTrain.append([(li,ci),(li-l,ci-c),direction])
 							if board[li-2*l][ci-2*c]==color and OnBoard([li-2*l,ci-2*c])==True:#pousse 3 contre 1
 								moveTrain.append([(li,ci),(li-l,ci-c),(li-2*l,ci-2*c),direction])
 					if board[li+2*l][ci+2*c]==ennemy and OnBoard([li+2*l,ci+2*c])==True: #pousse 3 contre 2
-						if board[li+3*l][ci+3*c]=='E' or OnBoard([li+3*l,ci+3*c])==False:
+						if (board[li+3*l][ci+3*c]=='E') or (OnBoard([li+3*l,ci+3*c])==False):
 							if board[li-l][ci-c]==color and board[li-2*l][ci-2*c]==color:
 								if OnBoard([li-l,ci-c])==True and OnBoard([li-2*l,ci-2*c])==True:
 									moveTrain.append([(li,ci),(li-l,ci-c),(li-2*l,ci-2*c),direction])
@@ -108,7 +108,9 @@ def moves(board,color,ennemy):
 					moveTrain.append([(li,ci),(lf,cf),(ld,cd),direction])
 		except:pass
 	moveAll=moveTrain+moveOne
-	return random.sample(moveAll,len(moveAll))
+	L=random.sample(moveAll,len(moveAll))
+	L.sort(key=len,reverse=True)
+	return reversed(L)
 
 def moveOneMarble(board,move,color):
 	li,ci = move[0][0],move[0][1]
@@ -245,18 +247,20 @@ def run(fun,board,current):
 		
 
 def listenServer():
-    sock=socket.socket()
-    sock.bind(('0.0.0.0',port))
-    sock.listen()
-    server, address = sock.accept()
-    data=receiveJSON(server)
-    if data['request']=='ping':
-        return sendJSON(server,{'response':'pong'})
-    if data['request']=='play':
-        move=run(negamaxWithPruningIterativeDeepening,data['state']['board'],data['state']['current'])
-        return sendJSON(server,{'response':'move','move':{'marbles':move[0:-1],'direction':move[-1]},'message':"random player"})
-    else:
-        print(data)
+	sock=socket.socket()
+	sock.bind(('0.0.0.0',port))
+	sock.listen()
+	server, address = sock.accept()
+	data=receiveJSON(server)
+	if data['request']=='ping':
+		return sendJSON(server,{'response':'pong'})
+	if data['request']=='play':
+		try:
+			move=run(negamaxWithPruningIterativeDeepening,data['state']['board'],data['state']['current'])
+			return sendJSON(server,{'response':'move','move':{'marbles':move[0:-1],'direction':move[-1]},'message':'stupid player'})
+		except:pass
+	else:
+		print(data)
 
 
 
