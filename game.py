@@ -8,30 +8,30 @@ import copy
 import time
 from collections import defaultdict
 
-def send(information):
+def send(information):#envoie des informations au serveur
     return sendJSON(s,information)
 
-def inscription(port):
+def inscription(port):#s'inscrit au près du serveur
     request={"request":"subscribe",
                 "port":port,
                 "name":str(port),
                 "matricules":["195187","195000"]}
     return send(request)
 
-def getColor(current):
+def getColor(current):#renvoie la couleur des marbles du joueur
     symbols = ['B', 'W']
     return symbols[current]
 
-def getEnnemy(current):
+def getEnnemy(current):#renvoie la couleur des marbles de son adverssaire
     symbols = ['W', 'B']
     return symbols[current]
 
-def opposite(current):
+def opposite(current):#indique le current opposé
 	if current==1:
 		return 0
 	return 1
 
-def computeMarbles(board,color):
+def computeMarbles(board,color):#compte le nombre des marbles sur le plateau (pour une couleur spécifique)
 	marbles=0
 	i=0
 	while i<9:
@@ -41,7 +41,7 @@ def computeMarbles(board,color):
 		i+=1
 	return marbles
 
-def winner(board,current):
+def winner(board,current):#vérifie s'il n'y pas de gagnant
 	color=getColor(current)
 	ennemy=getEnnemy(current)
 	if computeMarbles(board,color)<=8:
@@ -50,15 +50,7 @@ def winner(board,current):
 		return color
 	return None
 
-def utility(board,current):
-	theWinner=winner(board,current)
-	if theWinner is None:
-		return 0
-	if theWinner == getColor(current):
-		return 1
-	return -1
-
-def OnBoard(pos):
+def OnBoard(pos):#vérifie si une position est sur le plateau du jeu
 	l,c=pos[0],pos[1]
 	if min(l,c)<0:
 		return False
@@ -68,7 +60,7 @@ def OnBoard(pos):
 		return False
 	return True
 
-def moves(board,color,ennemy):
+def moves(board,color,ennemy):#donne toutes les movements possibles pour une couleur spécifier
 	moveOne=[]
 	posMarbles=[]
 	moveTrain=[]
@@ -97,22 +89,22 @@ def moves(board,color,ennemy):
 								if OnBoard([li-l,ci-c])==True and OnBoard([li-2*l,ci-2*c])==True:
 									moveTrain.append([(li,ci),(li-l,ci-c),(li-2*l,ci-2*c),direction])
 			except:pass
-	for move in moveOne:
-		li,ci,direction = move[0][0],move[0][1],move[1]
-		lf,cf=li-directions[direction][0],ci-directions[direction][1]
+	for move in moveOne:#avance de plusieurs marbles dans le vide
+		lm,cm,direction = move[0][0],move[0][1],move[1]
+		lf,cf=lm-directions[direction][0],cm-directions[direction][1]
 		ld,cd=lf-directions[direction][0],cf-directions[direction][1]
 		try:
 			if board[lf][cf]==color and OnBoard([lf,cf])==True:
-				moveTrain.append([(li,ci),(lf,cf),direction])
+				moveTrain.append([(lm,cm),(lf,cf),direction])
 				if board[ld][cd]==color and OnBoard([ld,cd])==True:
-					moveTrain.append([(li,ci),(lf,cf),(ld,cd),direction])
+					moveTrain.append([(lm,cm),(lf,cf),(ld,cd),direction])
 		except:pass
 	moveAll=moveTrain+moveOne
 	L=random.sample(moveAll,len(moveAll))
 	L.sort(key=len,reverse=True)
 	return reversed(L)
 
-def moveOneMarble(board,move,color):
+def moveOneMarble(board,move,color):#modification porté par une marble
 	li,ci = move[0][0],move[0][1]
 	direction=move[1]
 	ld,cd=li+directions[direction][0],ci+directions[direction][1]
@@ -122,13 +114,13 @@ def moveOneMarble(board,move,color):
 		destStatus='X'
 	board=copy.copy(board)
 	board[li]=copy.copy(board[li])
-	board[li][ci]='E'
 	if destStatus=='E':
 		board[ld]=copy.copy(board[ld])
+		board[li][ci]='E'
 		board[ld][cd]=color
 	return board
 
-def isFree(board,pos):
+def isFree(board,pos):#est ce qu'il y a une marble dans cette case
 	if OnBoard(pos):
 		l,c =pos[0],pos[1]
 		return board[l][c]=='E'
@@ -140,7 +132,7 @@ def MoveMarbles(board,marbles,direction,color):
 		board=moveOneMarble(board,[(pos),direction],color)
 	return board
 
-def moveMarbleTrain(board,move,color,ennemy):
+def moveMarbleTrain(board,move,color,ennemy):#modification porté par plusieurs marbles
 	direction=move[-1]
 	marbles= move[0:-1]
 	if direction in ['E','SE','SW']:
@@ -155,13 +147,13 @@ def moveMarbleTrain(board,move,color,ennemy):
 	board=MoveMarbles(board,list(reversed(push))+marbles,direction,color)
 	return board
 
-def apply(board,move,color,ennemy):
+def apply(board,move,color,ennemy):#applique la modification
 	state=list(board)
 	if len(move)==2:
 		return moveOneMarble(state,move,color)
 	return moveMarbleTrain(state,move,color,ennemy)
 
-def timeit(fun):
+def timeit(fun):#initialise le temp actuel
 	def wrapper(*args,**kwargs):
 		start=time.time()
 		res=fun(*args,**kwargs)
@@ -173,17 +165,16 @@ def next(board,player,fun):
 	_,move=fun(board,player)
 	return move
 
-def gameOver(board,current):
+def gameOver(board,current):#vérifirr s'il y a un gagnant
 	if winner(board,current) is not None:
 		return True
 	return False
 
-def lineValue(state, player):
+def lineValue(state, player):#donne la différence des marbles entre le joueur et son adversaire
 	color=getColor(player)
 	ennemy=getEnnemy(player)
 	mesMarbles=computeMarbles(state,color)
 	ennemyMarbles=computeMarbles(state,ennemy)
-
 	if mesMarbles>ennemyMarbles:
 		return mesMarbles-ennemyMarbles
 	if mesMarbles==ennemyMarbles:
@@ -191,7 +182,7 @@ def lineValue(state, player):
 	return -mesMarbles+ennemyMarbles
 
 
-def heuristic(state, player):
+def heuristic(state, player):#heuristic de la partie
 	color=getColor(player)
 	if gameOver(state,player):
 		theWinner = winner(state,player)
@@ -236,7 +227,7 @@ def negamaxWithPruningIterativeDeepening(state, player, timeout=2.8):
 		depth += 1
 	return value, move
 
-def run(fun,board,current):
+def run(fun,board,current):#tourne la fuction 'run' pendant une durée limité
 	move=None
 	start = time.time()
 	while time.time() - start < 2.8:
@@ -246,7 +237,7 @@ def run(fun,board,current):
 	return move
 		
 
-def listenServer():
+def listenServer():#reçois les instructions du serveur
 	sock=socket.socket()
 	sock.bind(('0.0.0.0',port))
 	sock.listen()
@@ -255,10 +246,9 @@ def listenServer():
 	if data['request']=='ping':
 		return sendJSON(server,{'response':'pong'})
 	if data['request']=='play':
-		try:
-			move=run(negamaxWithPruningIterativeDeepening,data['state']['board'],data['state']['current'])
+		move=run(negamaxWithPruningIterativeDeepening,data['state']['board'],data['state']['current'])
+		if move is not None:
 			return sendJSON(server,{'response':'move','move':{'marbles':move[0:-1],'direction':move[-1]},'message':'stupid player'})
-		except:pass
 	else:
 		print(data)
 
