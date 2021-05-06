@@ -15,7 +15,7 @@ def inscription(port):#s'inscrit au près du serveur
     request={"request":"subscribe",
                 "port":port,
                 "name":str(port),
-                "matricules":["195187","195000"]}
+                "matricules":["195187","195120"]}
     return send(request)
 
 def getColor(current):#renvoie la couleur des marbles du joueur
@@ -260,7 +260,7 @@ def listenServer():#reçois les instructions du serveur
 	if data['request']=='play':
 		move=run(negamaxWithPruningIterativeDeepening,data['state']['board'],data['state']['current'])
 		if move is not None:
-			return sendJSON(server,{'response':'move','move':{'marbles':move[0:-1],'direction':move[-1]},'message':'offensive player'})
+			return sendJSON(server,{'response':'move','move':{'marbles':move[0:-1],'direction':move[-1]},'message':'Hello World'})
 	else:
 		print(data)
 
