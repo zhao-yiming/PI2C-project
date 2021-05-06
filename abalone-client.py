@@ -281,4 +281,3 @@ if __name__ == '__main__':
     inscription(port)
     while 1:
         listenServer()
-#& python c:/sketch_oct01a/PI2C-project/game.py 8888
