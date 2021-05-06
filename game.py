@@ -35,8 +35,8 @@ def computeMarbles(board,color):#compte le nombre des marbles sur le plateau (po
 	marbles=0
 	i=0
 	while i<9:
-		for state in range(len(board[i])):
-			if board[i][state]==color and OnBoard([i,state])==True:
+		for state in range(9):
+			if boardMarble(board, color, [i,state]):
 				marbles+=1
 		i+=1
 	return marbles
@@ -60,49 +60,53 @@ def OnBoard(pos):#vérifie si une position est sur le plateau du jeu
 		return False
 	return True
 
+def boardMarble(board,color,pos):#vérifie si la position est sur le plateau et correspond à la couleur
+	l,c=pos[0],pos[1]
+	if OnBoard(pos)==True:
+		try:
+			return board[l][c]==color
+		except: return False
+	return False
+
 def moves(board,color,ennemy):#donne toutes les movements possibles pour une couleur spécifier
 	moveOne=[]
 	posMarbles=[]
 	moveTrain=[]
 	i=0
 	while i<9:
-		for state in range(len(board[i])):
-			if board[i][state]==color and OnBoard([i,state])==True:
+		for state in range(9):
+			if boardMarble(board, color, [i,state]):
 				posMarbles.append((i,state))
 		i+=1
 	for direction in directions:
 		for marble in posMarbles:
 			li,ci=marble[0],marble[1]
 			l,c=directions[direction][0],directions[direction][1]
-			try:
-				if board[li+l][ci+c]=='E': #anvance 1 pion dans le vide
-					moveOne.append([(li,ci),direction])
-				if board[li+l][ci+c]==ennemy and OnBoard([li+l,ci+c])==True: 
-					if (board[li+2*l][ci+2*c]=='E') or (OnBoard([li+2*l,ci+2*c])==False):#pousse 2 contre 1
-						if board[li-l][ci-c]==color and OnBoard([li-l,ci-c])==True:
-							moveTrain.append([(li,ci),(li-l,ci-c),direction])
-							if board[li-2*l][ci-2*c]==color and OnBoard([li-2*l,ci-2*c])==True:#pousse 3 contre 1
-								moveTrain.append([(li,ci),(li-l,ci-c),(li-2*l,ci-2*c),direction])
-					if board[li+2*l][ci+2*c]==ennemy and OnBoard([li+2*l,ci+2*c])==True: #pousse 3 contre 2
-						if (board[li+3*l][ci+3*c]=='E') or (OnBoard([li+3*l,ci+3*c])==False):
-							if board[li-l][ci-c]==color and board[li-2*l][ci-2*c]==color:
-								if OnBoard([li-l,ci-c])==True and OnBoard([li-2*l,ci-2*c])==True:
-									moveTrain.append([(li,ci),(li-l,ci-c),(li-2*l,ci-2*c),direction])
-			except:pass
+			if boardMarble(board,'E',[li+l,ci+c]): #anvance 1 pion dans le vide
+				moveOne.append([(li,ci),direction])
+			if boardMarble(board,ennemy,[li+l,ci+c]):
+				if isFree(board,[li+2*l,ci+2*c]):#pousse 2 contre 1
+					if boardMarble(board,color,[li-l,ci-c]):
+						moveTrain.append([(li,ci),(li-l,ci-c),direction])
+						if boardMarble(board,color,[li-2*l,ci-2*c]):#pousse 3 contre 1
+							moveTrain.append([(li,ci),(li-l,ci-c),(li-2*l,ci-2*c),direction])
+				if boardMarble(board,ennemy,[li+2*l,ci+2*c]): #pousse 3 contre 2
+					if isFree(board,[li+3*l,ci+3*c]):
+						if boardMarble(board,color,[li-l,ci-c]) and boardMarble(board,color,[li-2*l,ci-2*c]):
+							moveTrain.append([(li,ci),(li-l,ci-c),(li-2*l,ci-2*c),direction])
+
 	for move in moveOne:#avance de plusieurs marbles dans le vide
 		lm,cm,direction = move[0][0],move[0][1],move[1]
 		lf,cf=lm-directions[direction][0],cm-directions[direction][1]
 		ld,cd=lf-directions[direction][0],cf-directions[direction][1]
-		try:
-			if board[lf][cf]==color and OnBoard([lf,cf])==True:
-				moveTrain.append([(lm,cm),(lf,cf),direction])
-				if board[ld][cd]==color and OnBoard([ld,cd])==True:
-					moveTrain.append([(lm,cm),(lf,cf),(ld,cd),direction])
-		except:pass
+		if boardMarble(board, color, [lf,cf]):
+			moveTrain.append([(lm,cm),(lf,cf),direction])
+			if boardMarble(board, color, [ld,cd]):
+				moveTrain.append([(lm,cm),(lf,cf),(ld,cd),direction])
 	moveAll=moveTrain+moveOne
 	L=random.sample(moveAll,len(moveAll))
 	L.sort(key=len,reverse=True)
-	return reversed(L)
+	return L
 
 def moveOneMarble(board,move,color):#modification porté par une marble
 	li,ci = move[0][0],move[0][1]
@@ -114,15 +118,15 @@ def moveOneMarble(board,move,color):#modification porté par une marble
 		destStatus='X'
 	board=copy.copy(board)
 	board[li]=copy.copy(board[li])
+	board[li][ci]='E'
 	if destStatus=='E':
 		board[ld]=copy.copy(board[ld])
-		board[li][ci]='E'
 		board[ld][cd]=color
 	return board
 
 def isFree(board,pos):#est ce qu'il y a une marble dans cette case
+	l,c =pos[0],pos[1]
 	if OnBoard(pos):
-		l,c =pos[0],pos[1]
 		return board[l][c]=='E'
 	else:
 		return True
@@ -148,7 +152,9 @@ def moveMarbleTrain(board,move,color,ennemy):#modification porté par plusieurs 
 	return board
 
 def apply(board,move,color,ennemy):#applique la modification
-	state=list(board)
+	state=[]
+	for line in board:
+		state.append(list(line))
 	if len(move)==2:
 		return moveOneMarble(state,move,color)
 	return moveMarbleTrain(state,move,color,ennemy)
@@ -165,7 +171,7 @@ def next(board,player,fun):
 	_,move=fun(board,player)
 	return move
 
-def gameOver(board,current):#vérifirr s'il y a un gagnant
+def gameOver(board,current):#vérifier s'il y a un gagnant
 	if winner(board,current) is not None:
 		return True
 	return False
@@ -179,7 +185,7 @@ def lineValue(state, player):#donne la différence des marbles entre le joueur e
 		return mesMarbles-ennemyMarbles
 	if mesMarbles==ennemyMarbles:
 		return 0
-	return -mesMarbles+ennemyMarbles
+	return mesMarbles-ennemyMarbles
 
 
 def heuristic(state, player):#heuristic de la partie
@@ -204,9 +210,14 @@ def negamaxWithPruningIterativeDeepening(state, player, timeout=2.8):
 			res = -heuristic(state, player), None, over
 		else:
 			theValue, theMove, theOver = float('-inf'), None, True
-			possibilities = [(move, apply(state, move,color,ennemy)) for move in moves(state,color,ennemy)]
-			possibilities.sort(key=lambda poss: cache[tuple(poss[0][1])])
-			for move, successor in reversed(possibilities):
+			possibilities = [[move, apply(state, move,color,ennemy)] for move in moves(state,color,ennemy)]
+			for i in range(len(possibilities)):
+				A=[]
+				for elem in possibilities[i][1]:
+					A.append(tuple(elem))
+				possibilities[i][1]=A
+			possibilities.sort(key=lambda poss: cache[tuple(poss[1])])
+			for move, successor in possibilities:
 				value, _, over = cachedNegamaxWithPruningLimitedDepth(successor, opposite(player), depth-1, -beta, -alpha)
 				theOver = theOver and over
 				if value > theValue:
@@ -230,7 +241,8 @@ def negamaxWithPruningIterativeDeepening(state, player, timeout=2.8):
 def run(fun,board,current):#tourne la fuction 'run' pendant une durée limité
 	move=None
 	start = time.time()
-	while time.time() - start < 2.8:
+	over=gameOver(board, current)
+	while time.time() - start < 2.8 and not over:
 		color=getColor(current)
 		ennemy=getEnnemy(current)
 		move=next(board,current,fun)
@@ -248,7 +260,7 @@ def listenServer():#reçois les instructions du serveur
 	if data['request']=='play':
 		move=run(negamaxWithPruningIterativeDeepening,data['state']['board'],data['state']['current'])
 		if move is not None:
-			return sendJSON(server,{'response':'move','move':{'marbles':move[0:-1],'direction':move[-1]},'message':'stupid player'})
+			return sendJSON(server,{'response':'move','move':{'marbles':move[0:-1],'direction':move[-1]},'message':'offensive player'})
 	else:
 		print(data)
 
@@ -260,8 +272,8 @@ if __name__ == '__main__':
 	'SW': [1,0],
 	'NW': [-1,-1],
 	'SE': [1,1],
-	 'E': [0,1],
-	 'W': [0,-1]
+	'E': [0,1],
+	'W': [0,-1]
     }
     port=int(sys.argv[1])
     s=socket.socket()
