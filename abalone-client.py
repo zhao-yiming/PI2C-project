@@ -200,7 +200,7 @@ def heuristic(state, player):#heuristic de la partie
 	res = lineValue(state, player)
 	return res
 	
-def negamaxWithPruningIterativeDeepening(state, player, timeout=2.8):
+def negamaxWithPruningIterativeDeepening(state, player):
 	cache = defaultdict(lambda : 0)
 	def cachedNegamaxWithPruningLimitedDepth(state, player, depth, alpha=float('-inf'), beta=float('inf')):
 		color=getColor(player)
@@ -231,23 +231,17 @@ def negamaxWithPruningIterativeDeepening(state, player, timeout=2.8):
 
 	value, move = 0, None
 	depth = 1
-	start = time.time()
 	over = False
-	while value > -9 and time.time() - start < timeout and not over :
+	while value > -9 and depth<3 and not over :
 		value, move, over = cachedNegamaxWithPruningLimitedDepth(state, player, depth)
 		depth += 1
 	return value, move
 
-def run(fun,board,current):#tourne la fuction 'run' pendant une durée limité
-	move=None
-	start = time.time()
-	over=gameOver(board, current)
-	while time.time() - start < 2.8 and not over:
-		color=getColor(current)
-		ennemy=getEnnemy(current)
-		move=next(board,current,fun)
+def run(fun,board,current):#tourne la fuction 'run' 
+	color=getColor(current)
+	ennemy=getEnnemy(current)
+	move=next(board,current,fun)
 	return move
-		
 
 def listenServer():#reçois les instructions du serveur
 	sock=socket.socket()
