@@ -1,7 +1,7 @@
 import socket
 import sys
 import os
-from client import sendJSON, receiveJSON, NotAJSONObject, fetch
+from interface import sendJSON, receiveJSON, NotAJSONObject, fetch
 from threading import Timer
 import random
 import copy
